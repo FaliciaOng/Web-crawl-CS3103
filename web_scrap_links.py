@@ -48,12 +48,10 @@ if __name__ == '__main__':
     # full_query = 'https://sg.jobsdb.com/j?sp=homepage&trigger_source=homepage&q=engineering&l='
     # full_query = 'https://jobscentral.com.sg/jobs?title=engineer'
     full_query = url + query
+
     # print(full_query)
     
     process1 = Process(target=find_jobs, args=(url,full_query, 'posts', Fore.RED))
-
-    
-   
 
     process1.start()
     process1.join()
