@@ -38,7 +38,9 @@ def find_jobs(main_url,full_url, post_name, color):
             append_url = main_url + append_url
         print("Link:", (append_url))
 
-    
+# future work
+def pool_manager():
+    pass  
 
 
 if __name__ == '__main__':
