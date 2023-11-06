@@ -15,7 +15,7 @@ import csv
 warnings.simplefilter('ignore')
 
 csv_filename = "url_links.csv"
-csv_filename = "C:\\Users\\Siew Yang Zhi\\Desktop\\Uni Stuff\\Y4 Sem 1\\CS3103\\Assignment\\Assignment 4\\url_links.csv"
+# csv_filename = "C:\\Users\\Siew Yang Zhi\\Desktop\\Uni Stuff\\Y4 Sem 1\\CS3103\\Assignment\\Assignment 4\\url_links.csv"
 
 def handler(signalnum, frame):
     raise TypeError
@@ -66,18 +66,27 @@ def find_jobs(main_url,full_url, post_name, color,access_lock,dict_of_jobs):
                 # print(normal_string)
                 if normal_string == 'chemical':
                     #  print(Fore.YELLOW+"HIT", normal_string)
-                     dict_of_jobs['chemical'] +=1 
+                    access_lock.acquire()
+                    dict_of_jobs['chemical'] +=1 
+                    access_lock.release()
+                    
                 elif normal_string == 'project':
+                    access_lock.acquire()
                     # print(Fore.WHITE+"HIT", normal_string)
                     dict_of_jobs['project'] +=1 
+                    access_lock.release()
 
                 elif normal_string == 'software':
+                    access_lock.acquire()
                     # print(Fore.GREEN+"HIT", normal_string)
                     dict_of_jobs['software'] +=1 
+                    access_lock.release()
 
                 elif normal_string== 'electrical':
+                    access_lock.acquire()
                     # print(Fore.CYAN+"HIT", normal_string)
                     dict_of_jobs['electrical'] += 1
+                    access_lock.release()
                     
                     
 
