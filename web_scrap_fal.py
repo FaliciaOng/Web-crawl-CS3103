@@ -94,7 +94,6 @@ def find_jobs(main_url,full_url, post_name, color,access_lock,dict_of_jobs):
             # if keys in dict_of_jobs:
             #     dict_of_jobs[keys] += 1
                 
-
     time.sleep(0.1)
     # grab url 
     links = soup.find_all("a") 
@@ -102,8 +101,12 @@ def find_jobs(main_url,full_url, post_name, color,access_lock,dict_of_jobs):
         append_url = str(link.get("href"))
         if append_url[0] == "/":
             append_url = main_url + append_url
-        list_row = [append_url, 1, "127.0.0.1"]
-        new_urls.loc[len(new_urls)] = list_row
+        if append_url != 'None':
+
+
+            # print(append_url, "appear")
+            list_row = [append_url, 1, "127.0.0.1"]
+            new_urls.loc[len(new_urls)] = list_row
     return new_urls
 
 ''' TODO add query'''
@@ -120,7 +123,7 @@ def getURLContent(df_row,color,access_lock,dict_of_jobs):
 def read_from_file(url_index,num_of_url,access_lock,color,dict_of_jobs):
     # acquire the lock
     try:
-        print("CALLED Twice",num_of_url.value, url_index.value)
+        print(color+"THREAD START",num_of_url.value, url_index.value)
         signal(SIGINT, handler)
         access_lock.acquire()
         local_url_index = url_index.value
@@ -130,7 +133,7 @@ def read_from_file(url_index,num_of_url,access_lock,color,dict_of_jobs):
         df_row = df.iloc[local_url_index]
         new_urls,df_row = getURLContent(df_row,color,access_lock,dict_of_jobs)
         write_to_file(local_url_index,num_of_url,new_urls,df_row,access_lock)
-        print("THREAD COMPLETED")
+        print(color+"THREAD COMPLETED")
     except Exception as e:
         print(e, "@ file ")
 
@@ -146,6 +149,7 @@ if __name__ == '__main__':
     num_of_url = manager.Value("i",1)
     access_lock = manager.Lock()
     dict_of_jobs = manager.dict()
+    
 
     dict_of_jobs['project'] = 0
     dict_of_jobs['software'] = 0
@@ -168,7 +172,7 @@ if __name__ == '__main__':
             while True:
                 v = v%3
                 
-                if (url_index.value > 3):
+                if (url_index.value > 1):
                     break
 
                 if (num_of_url.value != url_index.value):
