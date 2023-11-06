@@ -21,9 +21,16 @@ def write_to_file(local_url_index,num_of_url,new_urls,df_row,access_lock):
     access_lock.acquire()
     df = pandas.read_csv('C:/Users/Siew Yang Zhi/Desktop/Uni Stuff/Y4 Sem 1/CS3103/Assignment/Assignment 4/url_links.csv') #Get updated content of file
     df.iloc[local_url_index] = df_row
-    for i in range(len(new_urls)):
-        df = df.append(new_urls.iloc[i],ignore_index=True) 
-        num_of_url.value += 1
+    #print(df)
+    #all_new_url = pandas.concat([pandas.DataFrame([new_urls.iloc[i]]) for i in range(len(new_urls))]], ignore_index=True)
+    #all_new_url = pandas.concat(new_urls, ignore_index=True)
+    df = pandas.concat([df,new_urls],ignore_index = True)
+    num_of_url.value += len(new_urls)
+    #for i in range(len(new_urls)):
+        #print(new_urls.iloc[i])
+    #    df = df.append(new_urls.iloc[i],ignore_index=True)
+    #    df = pandas.concat([df,new_urls.iloc[i]],ignore_index=True,axis=0)
+    #    num_of_url.value += 1
     df.to_csv('C:/Users/Siew Yang Zhi/Desktop/Uni Stuff/Y4 Sem 1/CS3103/Assignment/Assignment 4/url_links.csv',index=False)
     access_lock.release()
 
