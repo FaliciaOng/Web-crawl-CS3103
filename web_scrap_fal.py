@@ -55,25 +55,25 @@ def find_jobs(main_url,full_url, post_name, color,access_lock,dict_of_jobs):
         if keyword_lowercase != "\n" and keyword_lowercase != "":
             # must use .contains()
             keys = keyword_lowercase.split()
-            print(color+f'{keys}')
+            # print(color+f'{keys}')
             # print(type(keys))
 
             for key in keys:
                 normal_string="".join(ch for ch in key if ch.isalnum())
                 # print(normal_string)
                 if normal_string == 'chemical':
-                     print(Fore.YELLOW+"HIT", normal_string)
+                    #  print(Fore.YELLOW+"HIT", normal_string)
                      dict_of_jobs['chemical'] +=1 
                 elif normal_string == 'project':
-                    print(Fore.WHITE+"HIT", normal_string)
+                    # print(Fore.WHITE+"HIT", normal_string)
                     dict_of_jobs['project'] +=1 
 
                 elif normal_string == 'software':
-                    print(Fore.GREEN+"HIT", normal_string)
+                    # print(Fore.GREEN+"HIT", normal_string)
                     dict_of_jobs['software'] +=1 
 
                 elif normal_string== 'electrical':
-                    print(Fore.CYAN+"HIT", normal_string)
+                    # print(Fore.CYAN+"HIT", normal_string)
                     dict_of_jobs['electrical'] += 1
                     
                     
@@ -108,6 +108,7 @@ def getURLContent(df_row,color,access_lock,dict_of_jobs):
 def read_from_file(url_index,num_of_url,access_lock,color,dict_of_jobs):
     # acquire the lock
     try:
+        signal(SIGINT, handler)
         access_lock.acquire()
         local_url_index = url_index.value
         df = pandas.read_csv('url_links.csv') #Get updated content of file
@@ -116,8 +117,9 @@ def read_from_file(url_index,num_of_url,access_lock,color,dict_of_jobs):
         df_row = df.iloc[local_url_index]
         new_urls,df_row = getURLContent(df_row,color,access_lock,dict_of_jobs)
         write_to_file(local_url_index,num_of_url,new_urls,df_row,access_lock)
+        print("THREAD COMPLETED")
     except Exception as e:
-        print(e)
+        print(e, "@ file ")
 
 # future work
 def pool_manager():
@@ -137,24 +139,43 @@ if __name__ == '__main__':
     dict_of_jobs['chemical'] = 0
     dict_of_jobs['electrical'] = 0
     
-    numer_of_processes = 3
+    numer_of_processes = 2
     print(type(url_index),url_index)
     color = [Fore.RED,Fore.BLUE,Fore.CYAN]
     v = 0
+    visited = set()
+
+    
     try:
         # allow us to end the code
-        # signal(SIGINT, handler)
+        signal(SIGINT, handler)
     
         with Pool(numer_of_processes) as pool:
-            v = v%3
-            if (url_index.value <= 4):
-                pool.apply_async(read_from_file,(url_index,num_of_url,access_lock,color[v],dict_of_jobs))
-                v += 1
+            
+            
+            while True:
+                v = v%3
+                print("INDEX",url_index.value)
+                if (url_index.value > 3):
+                    break
+                
+                if (num_of_url.value != url_index.value):
+                    print("CALLED Twice",num_of_url.value, url_index.value  )
+                    pool.apply_async(read_from_file,(url_index,num_of_url,access_lock,color[v],dict_of_jobs))
+                    visited.add(url_index.value)
+                    v += 1
+
+                time.sleep(1)
+
+
+            print("Abouting to close pool..")
             pool.close()
+            print("sucessfully close")
             pool.join()
-
-
-    except TypeError as e:
+            print("sucessfully close join")
+            
+            
+    except Exception as e:
         print(e, "tye")
 
     print(dict_of_jobs)
