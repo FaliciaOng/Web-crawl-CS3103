@@ -92,7 +92,7 @@ def process_manager():
             print("hi")
             for i in range (10):
                 v = v%3
-                pool.apply_async(square,(i,3,color[v]))
+                pool.apply_async(square,(1,3,color[1]))
                 v+= 1
 
             # pool.apply_async(square,(2,2,color[1]))
