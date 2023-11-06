@@ -49,7 +49,7 @@ def find_jobs(main_url,full_url, post_name, color):
         if keyword_lowercase != "\n" and keyword_lowercase != "":
             # must use .contains()
             keys = keyword_lowercase.split()
-            print(keys)
+            #print(keys)
 
     time.sleep(0.1)
     # grab url 
@@ -70,6 +70,7 @@ def getURLContent(df_row):
     df_row['Respond Time'] = respond_time
     df_row['IP Of Server'] = server_ip
     full_query = url + query
+    print("Url = "+str(full_query))
     new_urls = find_jobs(url,full_query, 'posts', Fore.RED)
     return new_urls,df_row
 
@@ -83,6 +84,7 @@ def read_from_file(url_index,num_of_url,access_lock):
     df_row = df.iloc[local_url_index]
     new_urls,df_row = getURLContent(df_row)
     write_to_file(local_url_index,num_of_url,new_urls,df_row,access_lock)
+    #print("Thread close")
 
 # future work
 def pool_manager():
@@ -91,19 +93,28 @@ def pool_manager():
 if __name__ == '__main__':
     url_index = multiprocessing.Value("i",0)
     num_of_url = multiprocessing.Value("i",1)
+    #num_of_threads = multiprocessing.Value("i",0)
     access_lock = multiprocessing.Lock()
+    list_of_threads = []
     while (True):
         if (url_index.value > 2):
             break
         
         if (num_of_url.value != url_index.value):
             p = Process(target=read_from_file, args=(url_index,num_of_url,access_lock))
+            #num_of_threads.value += 1
+            #print("Thread" + str(num_of_threads.value) + " start")
             p.start()
-            p.join()
+            #p.join()
+            list_of_threads.append(p)
         
         time.sleep(1)
+    
+    #Wait for all threads to end by exiting.
+    for thread in list_of_threads:
+        thread.join()
 
-    url = 'https://www.jobstreet.com.sg'
+    #url = 'https://www.jobstreet.com.sg'
     #query = '/Engineer-jobs'
     # full_query = 'https://sg.jobsdb.com/j?sp=homepage&trigger_source=homepage&q=engineering&l='
     # full_query = 'https://jobscentral.com.sg/jobs?title=engineer'
