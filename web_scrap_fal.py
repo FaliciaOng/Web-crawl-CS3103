@@ -43,7 +43,7 @@ def write_to_file(local_url_index,num_of_url,new_urls,df_row,access_lock):
     df.to_csv(csv_filename,index=False)
     access_lock.release()
 
-def find_jobs(main_url,full_url, post_name, color,access_lock,dict_of_jobs):
+def find_jobs(main_url,full_url, post_name, color,access_lock,dict_of_jobs,dict_visited_links):
     new_urls = pandas.DataFrame(columns=('URL', 'Respond Time', 'IP Of Server'))
     s = requests.Session()
     s.cookies.set_policy(BlockAll())
@@ -101,26 +101,28 @@ def find_jobs(main_url,full_url, post_name, color,access_lock,dict_of_jobs):
         append_url = str(link.get("href"))
         if append_url[0] == "/":
             append_url = main_url + append_url
+            if append_url[-1] == '/':
+                append_url = append_url[:-1]
         if append_url != 'None':
-
-
-            # print(append_url, "appear")
-            list_row = [append_url, 1, "127.0.0.1"]
-            new_urls.loc[len(new_urls)] = list_row
+            if append_url not in dict_visited_links:
+                # print(append_url, "appear")
+                dict_visited_links[append_url]=1
+                list_row = [append_url, 1, "127.0.0.1"]
+                new_urls.loc[len(new_urls)] = list_row
     return new_urls
 
 ''' TODO add query'''
-def getURLContent(df_row,color,access_lock,dict_of_jobs):
+def getURLContent(df_row,color,access_lock,dict_of_jobs,dict_visited_links):
     respond_time = 1 #Now hardcode to be 1,to be change with actual value
     server_ip = "127.0.0.1" #Now hardocde to 127.0.0.1 to be change in future.
     url = df_row['URL']
     df_row['Respond Time'] = respond_time
     df_row['IP Of Server'] = server_ip
     full_query = url 
-    new_urls = find_jobs(url,full_query, 'posts', color,access_lock,dict_of_jobs)
+    new_urls = find_jobs(url,full_query, 'posts', color,access_lock,dict_of_jobs,dict_visited_links)
     return new_urls,df_row
 
-def read_from_file(url_index,num_of_url,access_lock,color,dict_of_jobs):
+def read_from_file(url_index,num_of_url,access_lock,color,dict_of_jobs,dict_visited_links):
     # acquire the lock
     try:
         print(color+"THREAD START",num_of_url.value, url_index.value)
@@ -131,7 +133,7 @@ def read_from_file(url_index,num_of_url,access_lock,color,dict_of_jobs):
         df = pandas.read_csv(csv_filename) #Get updated content of file
         access_lock.release()
         df_row = df.iloc[local_url_index]
-        new_urls,df_row = getURLContent(df_row,color,access_lock,dict_of_jobs)
+        new_urls,df_row = getURLContent(df_row,color,access_lock,dict_of_jobs,dict_visited_links)
         write_to_file(local_url_index,num_of_url,new_urls,df_row,access_lock)
         print(color+"THREAD COMPLETED")
     except Exception as e:
@@ -149,12 +151,15 @@ if __name__ == '__main__':
     num_of_url = manager.Value("i",1)
     access_lock = manager.Lock()
     dict_of_jobs = manager.dict()
-    
+    dict_visited_links = manager.dict()
 
     dict_of_jobs['project'] = 0
     dict_of_jobs['software'] = 0
     dict_of_jobs['chemical'] = 0
     dict_of_jobs['electrical'] = 0
+
+    dict_visited_links['https://www.jobstreet.com.sg/Engineer-jobs'] = 1
+    dict_visited_links['https://jobscentral.com.sg/jobs?title=engineer'] = 1
     
     numer_of_processes = 2
     print(type(url_index),url_index)
@@ -172,11 +177,11 @@ if __name__ == '__main__':
             while True:
                 v = v%3
                 
-                if (url_index.value > 1):
+                if (url_index.value > 2):
                     break
 
                 if (num_of_url.value != url_index.value):
-                    pool.apply_async(read_from_file,(url_index,num_of_url,access_lock,color[v],dict_of_jobs))
+                    pool.apply_async(read_from_file,(url_index,num_of_url,access_lock,color[v],dict_of_jobs,dict_visited_links))
                     visited.add(url_index.value)
                     v += 1
                 time.sleep(1)
