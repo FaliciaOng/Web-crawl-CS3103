@@ -107,14 +107,17 @@ def getURLContent(df_row,color,access_lock,dict_of_jobs):
 
 def read_from_file(url_index,num_of_url,access_lock,color,dict_of_jobs):
     # acquire the lock
-    access_lock.acquire()
-    local_url_index = url_index.value
-    df = pandas.read_csv('url_links.csv') #Get updated content of file
-    url_index.value += 1
-    access_lock.release()
-    df_row = df.iloc[local_url_index]
-    new_urls,df_row = getURLContent(df_row,color,access_lock,dict_of_jobs)
-    write_to_file(local_url_index,num_of_url,new_urls,df_row,access_lock)
+    try:
+        access_lock.acquire()
+        local_url_index = url_index.value
+        df = pandas.read_csv('url_links.csv') #Get updated content of file
+        url_index.value += 1
+        access_lock.release()
+        df_row = df.iloc[local_url_index]
+        new_urls,df_row = getURLContent(df_row,color,access_lock,dict_of_jobs)
+        write_to_file(local_url_index,num_of_url,new_urls,df_row,access_lock)
+    except Exception as e:
+        print(e)
 
 # future work
 def pool_manager():
@@ -141,11 +144,12 @@ if __name__ == '__main__':
     try:
         # allow us to end the code
         # signal(SIGINT, handler)
-      
+    
         with Pool(numer_of_processes) as pool:
             v = v%3
-            pool.apply_async(read_from_file,(url_index,num_of_url,access_lock,color[v],dict_of_jobs))
-            v += 1
+            if (url_index.value <= 4):
+                pool.apply_async(read_from_file,(url_index,num_of_url,access_lock,color[v],dict_of_jobs))
+                v += 1
             pool.close()
             pool.join()
 
