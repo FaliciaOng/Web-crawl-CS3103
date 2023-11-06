@@ -59,7 +59,7 @@ def find_jobs(main_url,full_url, post_name, color,access_lock,dict_of_jobs,dict_
         if keyword_lowercase != "\n" and keyword_lowercase != "":
             # must use .contains()
             keys = keyword_lowercase.split()
-            # print(color+f'{keys}')
+            print(color+f'{keys}')
             # print(type(keys))
 
             for key in keys:
@@ -91,24 +91,26 @@ def find_jobs(main_url,full_url, post_name, color,access_lock,dict_of_jobs,dict_
                     
                     
                 
-    time.sleep(0.1)
+    time.sleep(0.5)
     # grab url 
     links = soup.find_all("a") 
     for link in links:
         append_url = str(link.get("href"))
-        if append_url[0] == "/":
-            append_url = main_url + append_url
-            if append_url[-1] == '/':
-                append_url = append_url[:-1]
         if append_url != 'None':
-            if append_url not in dict_visited_links:
-                # print(append_url, "appear")
-                host_array = append_url.split('/')
-                ip = socket.gethostbyname(host_array[2])
-        
-                dict_visited_links[append_url]=1
-                list_row = [append_url, 1, ip]
-                new_urls.loc[len(new_urls)] = list_row
+            if append_url[0] == "/":
+                append_url = main_url + append_url
+                if append_url[-1] == '/':
+                    append_url = append_url[:-1]
+            
+                if append_url not in dict_visited_links:
+                    # print(append_url, "appear")
+                    host_array = append_url.split('/')
+                    ip = socket.gethostbyname(host_array[2])
+            
+                    dict_visited_links[append_url]=1
+                    list_row = [append_url, 1, ip]
+                    new_urls.loc[len(new_urls)] = list_row
+                    
     return new_urls
 
 ''' TODO add query'''
@@ -165,9 +167,9 @@ if __name__ == '__main__':
     dict_visited_links['https://www.jobstreet.com.sg/Engineer-jobs'] = 1
     dict_visited_links['https://jobscentral.com.sg/jobs?title=engineer'] = 1
     
-    numer_of_processes = 2
+    numer_of_processes = 3
     print(type(url_index),url_index)
-    color = [Fore.RED,Fore.BLUE,Fore.CYAN]
+    color = [Fore.RED,Fore.BLUE,Fore.YELLOW]
     v = 0
     visited = set()
 
@@ -181,7 +183,7 @@ if __name__ == '__main__':
             while True:
                 v = v%3
                 
-                if (url_index.value > 2):
+                if (url_index.value > 5):
                     break
 
                 if (num_of_url.value != url_index.value):
