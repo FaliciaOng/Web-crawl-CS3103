@@ -35,7 +35,7 @@ def main():
     dict_visited_links = manager.dict()
 
     dict_of_jobs['project'] = 0
-    dict_of_jobs['software'] = 0
+    dict_of_jobs['service'] = 0
     dict_of_jobs['chemical'] = 0
     dict_of_jobs['electrical'] = 0
 
@@ -83,8 +83,8 @@ def main():
     print(dict_of_jobs)
     
 
-    header = ['electrical', 'software', 'chemical', 'project']
-    data = [dict_of_jobs['electrical'], dict_of_jobs['software'], dict_of_jobs['chemical'], dict_of_jobs['project']]
+    header = ['electrical', 'service', 'chemical', 'project']
+    data = [dict_of_jobs['electrical'], dict_of_jobs['service'], dict_of_jobs['chemical'], dict_of_jobs['project']]
 
     with open('findings.csv', 'w', encoding='UTF8',newline='') as f:
         writer = csv.writer(f)
@@ -135,6 +135,7 @@ def find_jobs(main_url,full_url, post_name, color,access_lock,dict_of_jobs,dict_
             if keyword_lowercase != "\n" and keyword_lowercase != "":
                 # must use .contains()
                 keys = keyword_lowercase.split()
+                time.sleep(0.001)
                 print(color+f'{keys}')
                 # print(type(keys))
 
@@ -153,10 +154,10 @@ def find_jobs(main_url,full_url, post_name, color,access_lock,dict_of_jobs,dict_
                         dict_of_jobs['project'] +=1 
                         access_lock.release()
 
-                    elif normal_string == 'software':
+                    elif normal_string == 'service':
                         access_lock.acquire()
                         # print(Fore.GREEN+"HIT", normal_string)
-                        dict_of_jobs['software'] +=1 
+                        dict_of_jobs['service'] +=1 
                         access_lock.release()
 
                     elif normal_string== 'electrical':
