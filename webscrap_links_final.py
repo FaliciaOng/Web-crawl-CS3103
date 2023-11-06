@@ -13,11 +13,16 @@ from signal import signal, SIGINT
 import warnings
 import csv
 from collections import deque
+import sys
+
+
 
 warnings.simplefilter('ignore')
 
-csv_filename = "url_links.csv"
-# csv_filename = "C:\\Users\\Siew Yang Zhi\\Desktop\\Uni Stuff\\Y4 Sem 1\\CS3103\\Assignment\\Assignment 4\\url_links.csv"
+if(sys.argv[1]=="fal"):
+    csv_filename = "url_links.csv"
+elif (sys.argv[1]=="yz"):
+    csv_filename = "C:\\Users\\Siew Yang Zhi\\Desktop\\Uni Stuff\\Y4 Sem 1\\CS3103\\Assignment\\Assignment 4\\url_links.csv"
 
 list_of_urls = deque()
 def main():
