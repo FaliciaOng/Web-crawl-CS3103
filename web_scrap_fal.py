@@ -6,6 +6,7 @@ import time
 from colorama import Fore
 from http import cookiejar
 import pandas
+import socket 
 import os
 from multiprocessing import Manager
 from multiprocessing.pool import Pool
@@ -89,10 +90,6 @@ def find_jobs(main_url,full_url, post_name, color,access_lock,dict_of_jobs,dict_
                     access_lock.release()
                     
                     
-
-
-            # if keys in dict_of_jobs:
-            #     dict_of_jobs[keys] += 1
                 
     time.sleep(0.1)
     # grab url 
@@ -106,19 +103,26 @@ def find_jobs(main_url,full_url, post_name, color,access_lock,dict_of_jobs,dict_
         if append_url != 'None':
             if append_url not in dict_visited_links:
                 # print(append_url, "appear")
+                host_array = append_url.split('/')
+                ip = socket.gethostbyname(host_array[2])
+        
                 dict_visited_links[append_url]=1
-                list_row = [append_url, 1, "127.0.0.1"]
+                list_row = [append_url, 1, ip]
                 new_urls.loc[len(new_urls)] = list_row
     return new_urls
 
 ''' TODO add query'''
 def getURLContent(df_row,color,access_lock,dict_of_jobs,dict_visited_links):
+
     respond_time = 1 #Now hardcode to be 1,to be change with actual value
     server_ip = "127.0.0.1" #Now hardocde to 127.0.0.1 to be change in future.
     url = df_row['URL']
     df_row['Respond Time'] = respond_time
-    df_row['IP Of Server'] = server_ip
+    
     full_query = url 
+    host_array = full_query.split('/')
+    server_ip = socket.gethostbyname(host_array[2])
+    df_row['IP Of Server'] = server_ip
     new_urls = find_jobs(url,full_query, 'posts', color,access_lock,dict_of_jobs,dict_visited_links)
     return new_urls,df_row
 
