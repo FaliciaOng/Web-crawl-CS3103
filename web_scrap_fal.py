@@ -14,6 +14,9 @@ import warnings
 import csv
 warnings.simplefilter('ignore')
 
+csv_filename = "url_links.csv"
+csv_filename = "C:\\Users\\Siew Yang Zhi\\Desktop\\Uni Stuff\\Y4 Sem 1\\CS3103\\Assignment\\Assignment 4\\url_links.csv"
+
 def handler(signalnum, frame):
     raise TypeError
 
@@ -25,7 +28,7 @@ class BlockAll(cookiejar.CookiePolicy):
 
 def write_to_file(local_url_index,num_of_url,new_urls,df_row,access_lock):
     access_lock.acquire()
-    df = pandas.read_csv('url_links.csv') #Get updated content of file
+    df = pandas.read_csv(csv_filename) #Get updated content of file
     df.iloc[local_url_index] = df_row
     #print(df)
     #all_new_url = pandas.concat([pandas.DataFrame([new_urls.iloc[i]]) for i in range(len(new_urls))]], ignore_index=True)
@@ -37,7 +40,7 @@ def write_to_file(local_url_index,num_of_url,new_urls,df_row,access_lock):
     #    df = df.append(new_urls.iloc[i],ignore_index=True)
     #    df = pandas.concat([df,new_urls.iloc[i]],ignore_index=True,axis=0)
     #    num_of_url.value += 1
-    df.to_csv('url_links.csv',index=False)
+    df.to_csv(csv_filename,index=False)
     access_lock.release()
 
 def find_jobs(main_url,full_url, post_name, color,access_lock,dict_of_jobs):
@@ -108,11 +111,12 @@ def getURLContent(df_row,color,access_lock,dict_of_jobs):
 def read_from_file(url_index,num_of_url,access_lock,color,dict_of_jobs):
     # acquire the lock
     try:
+        print("CALLED Twice",num_of_url.value, url_index.value)
         signal(SIGINT, handler)
         access_lock.acquire()
         local_url_index = url_index.value
-        df = pandas.read_csv('url_links.csv') #Get updated content of file
         url_index.value += 1
+        df = pandas.read_csv(csv_filename) #Get updated content of file
         access_lock.release()
         df_row = df.iloc[local_url_index]
         new_urls,df_row = getURLContent(df_row,color,access_lock,dict_of_jobs)
@@ -152,21 +156,17 @@ if __name__ == '__main__':
     
         with Pool(numer_of_processes) as pool:
             
-            
             while True:
                 v = v%3
-                print("INDEX",url_index.value)
+                
                 if (url_index.value > 3):
                     break
-                
+
                 if (num_of_url.value != url_index.value):
-                    print("CALLED Twice",num_of_url.value, url_index.value  )
                     pool.apply_async(read_from_file,(url_index,num_of_url,access_lock,color[v],dict_of_jobs))
                     visited.add(url_index.value)
                     v += 1
-
                 time.sleep(1)
-
 
             print("Abouting to close pool..")
             pool.close()
