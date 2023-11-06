@@ -94,14 +94,14 @@ def find_jobs(main_url,full_url, post_name, color,access_lock,dict_of_jobs):
         new_urls.loc[len(new_urls)] = list_row
     return new_urls
 
+''' TODO add query'''
 def getURLContent(df_row,color,access_lock,dict_of_jobs):
     respond_time = 1 #Now hardcode to be 1,to be change with actual value
     server_ip = "127.0.0.1" #Now hardocde to 127.0.0.1 to be change in future.
-    query = '/Engineer-jobs'
     url = df_row['URL']
     df_row['Respond Time'] = respond_time
     df_row['IP Of Server'] = server_ip
-    full_query = url + query
+    full_query = url 
     new_urls = find_jobs(url,full_query, 'posts', color,access_lock,dict_of_jobs)
     return new_urls,df_row
 
