@@ -62,10 +62,14 @@ def main():
                 if (processed_url.value > 6):
                     break
                 
-                #url_index == num of url in dequeue and num_of_url = num of url in the file.
+                # Calls the read_from_file when the index of the last URL added to the queue does not match the total number of URLs in the CSV file.
+                # When this happens, it means there are new URLs within the CSV file.
                 if (url_index.value != num_of_url.value):
                     read_from_file(url_index,num_of_url,access_lock,color,dict_of_jobs)
-
+                
+                # If there are entries within the list_of_url, pop the first tuple in the queue which contains the URL and its index in the CSV file.
+                # Start a new thread which runs process_url to crawl the URL.
+                # Update the num of URL that has been processed by the program.
                 if list_of_urls:
                     (df_row,index) = list_of_urls.popleft()
                     print(color[v]+"Process " + str(df_row['URL']))
@@ -114,9 +118,13 @@ def get_server_ip(full_query):
     server_ip = socket.gethostbyname(host_array[2])
     return server_ip
 
+""" This function updates the csv file to include the new URLs which was extracted from the webpage 
+    as well as update the geolocation information of the webpage within the file. 
+    The total num of url's in the file is updated as well.
+    Access lock is done to ensure that only one thread can read or write to the file at any time. """
 def write_to_file(local_url_index,num_of_url,new_urls,df_row,access_lock):
     access_lock.acquire()
-    df = pandas.read_csv(csv_filename) #Get updated content of file
+    df = pandas.read_csv(csv_filename)
     df.iloc[local_url_index] = df_row
     df = pandas.concat([df,new_urls],ignore_index = True)
     num_of_url.value += len(new_urls)
@@ -195,6 +203,11 @@ def find_jobs(main_url,full_url, post_name, color,access_lock,dict_of_jobs,dict_
 
 
 ''' TODO add query'''
+
+""" 
+    Extract the URL from the selected row in the csv file and calls find_jobs to get the URL content as well as URL geolocation.
+    Returns a list of new url as well as the updated version of the selected row in the csv file.
+"""
 def getURLContent(df_row,color,access_lock,dict_of_jobs,dict_visited_links):
     try:
         respond_time = 1 #Now hardcode to be 1,to be change with actual value
@@ -209,6 +222,11 @@ def getURLContent(df_row,color,access_lock,dict_of_jobs,dict_visited_links):
     return new_urls,df_row
  
 
+""" 
+    Reads the newly added URLs from the CSV file and adds them to a queue of URL's for processing.
+    Updates the url_index variable which points to the row of the URL that was last added to the queue. Index 0 = Row 1 in CSV file.
+    Access lock is done to ensure that only one thread can read or write to the file at any time.
+"""
 def read_from_file(url_index,num_of_url,access_lock,color,dict_of_jobs):
     # acquire the lock
     global list_of_urls
@@ -226,12 +244,14 @@ def read_from_file(url_index,num_of_url,access_lock,color,dict_of_jobs):
     except Exception as e:
         print(e, "@ file ")
 
-
+"""
+    Calls the getURLContent method to get the list of new urls extracted from the webpage as well as the webpage's geolocation.
+    Calls write_to_file to write update the URLs within the CSV file.
+"""
 def process_url(df_row,num_of_url,color,access_lock,dict_of_jobs,index,dict_visited_links):
     new_urls,df_row = getURLContent(df_row,color,access_lock,dict_of_jobs,dict_visited_links)
     print(color+"THREAD COMPLETE")
     write_to_file(index,num_of_url,new_urls,df_row,access_lock)
-
 
 if __name__ == '__main__':
     main()
