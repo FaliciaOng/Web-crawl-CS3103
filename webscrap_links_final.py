@@ -14,6 +14,7 @@ import warnings
 import csv
 from collections import deque
 import sys
+from ip2geotools.databases.noncommercial import DbIpCity
 
 
 
@@ -134,13 +135,12 @@ def write_to_file(local_url_index,num_of_url,new_urls,df_row,access_lock):
 
 def find_jobs(main_url,full_url, post_name, color,access_lock,dict_of_jobs,dict_visited_links):
     try:
-        new_urls = pandas.DataFrame(columns=('URL', 'Respond Time', 'IP Of Server'))
+        new_urls = pandas.DataFrame(columns=('URL', 'Respond Time (S)', 'IP Of Server', 'Geolocation'))
         s = requests.Session()
         s.cookies.set_policy(BlockAll())
 
         html_text = s.get(full_url).text
         soup = BeautifulSoup(html_text,'lxml')
-
         # grab body
         body = soup.body
         for keyword in (body.strings):
@@ -191,10 +191,9 @@ def find_jobs(main_url,full_url, post_name, color,access_lock,dict_of_jobs,dict_
                         append_url = append_url[:-1]
                 
                     if append_url not in dict_visited_links:
-                       
                         ip = get_server_ip(append_url)
                         dict_visited_links[append_url]=1
-                        list_row = [append_url, 1, ip]
+                        list_row = [append_url, '-', '-', '-']
                         new_urls.loc[len(new_urls)] = list_row
     except Exception as e:
         print(e, " @ find jobs")
@@ -210,12 +209,14 @@ def find_jobs(main_url,full_url, post_name, color,access_lock,dict_of_jobs,dict_
 """
 def getURLContent(df_row,color,access_lock,dict_of_jobs,dict_visited_links):
     try:
-        respond_time = 1 #Now hardcode to be 1,to be change with actual value
         url = df_row['URL']
-        df_row['Respond Time'] = respond_time
+        respond_time = get_response_time(url)
+        df_row['Respond Time (S)'] = respond_time
         full_query = url 
         server_ip = get_server_ip(full_query)
         df_row['IP Of Server'] = server_ip
+        country = get_geolocation(server_ip)
+        df_row['Geolocation'] = country
         new_urls = find_jobs(url,full_query, 'posts', color,access_lock,dict_of_jobs,dict_visited_links)
     except Exception as e:
         print(e, " @ getURL")
@@ -252,6 +253,21 @@ def process_url(df_row,num_of_url,color,access_lock,dict_of_jobs,index,dict_visi
     new_urls,df_row = getURLContent(df_row,color,access_lock,dict_of_jobs,dict_visited_links)
     print(color+"THREAD COMPLETE")
     write_to_file(index,num_of_url,new_urls,df_row,access_lock)
+
+"""
+    Gets the response time of the server using url passed
+"""
+def get_response_time(url):
+    response_time = requests.get(url).elapsed.total_seconds()
+    return response_time
+
+"""
+    Uses IP address to get location details using the IP to City database
+"""
+def get_geolocation(ip):
+    location = DbIpCity.get(ip)
+    country = location.country
+    return country
 
 if __name__ == '__main__':
     main()
