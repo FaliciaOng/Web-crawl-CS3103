@@ -21,12 +21,12 @@ from ip2geotools.databases.noncommercial import DbIpCity
 import winsound
 warnings.simplefilter('ignore')
 
+
+
 def make_noise():
   duration = 2000  # milliseconds
   freq = 440  # Hz
   winsound.Beep(freq, duration)
-
-
 
 
 if (sys.argv[1]=="yz"):
@@ -39,7 +39,10 @@ list_of_urls = deque()
 
 def main():
     global list_of_urls
-    
+    startTime = time.time()
+    timeToRun = 300
+    endTime = startTime + timeToRun
+
     pool = Pool() 
     manager = Manager()
     
@@ -79,10 +82,9 @@ def main():
         with Pool(number_of_processes) as pool:
             while True:
                 v = v%number_of_processes
-       
-                if (dict_of_jobs['project'] == 100) or (dict_of_jobs['service'] == 100) or dict_of_jobs['chemical'] == 100 \
-                    or dict_of_jobs['electrical'] == 100 or dict_of_jobs['software'] == 100 or dict_of_jobs['mechanical'] == 100 :
-                    print("=========================TERMINATED DUE TO KEYWORD FOUND================================")
+
+                if time.time() >= endTime:
+                    print(f"=========================TERMINATED AFTER {timeToRun} seconds ================================")
                     break
                 
                 # Calls the read_from_file when the index of the last URL added to the queue does not match the total number of URLs in the CSV file.
