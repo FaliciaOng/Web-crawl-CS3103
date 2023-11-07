@@ -1,3 +1,6 @@
+"""
+Source: https://stackoverflow.com/questions/17037668/how-to-disable-cookie-handling-with-the-python-requests-library
+"""
 from bs4 import BeautifulSoup
 import requests
 import multiprocessing
@@ -15,17 +18,25 @@ import csv
 from collections import deque
 import sys
 from ip2geotools.databases.noncommercial import DbIpCity
-
-
-
+import winsound
 warnings.simplefilter('ignore')
 
-if(sys.argv[1]=="fal"):
-    csv_filename = "url_links.csv"
-elif (sys.argv[1]=="yz"):
+def make_noise():
+  duration = 2000  # milliseconds
+  freq = 440  # Hz
+  winsound.Beep(freq, duration)
+
+
+
+
+if (sys.argv[1]=="yz"):
     csv_filename = "C:\\Users\\Siew Yang Zhi\\Desktop\\Uni Stuff\\Y4 Sem 1\\CS3103\\Assignment\\Assignment 4\\url_links.csv"
+else:
+    csv_filename = "url_links.csv"
 
 list_of_urls = deque()
+
+
 def main():
     global list_of_urls
     
@@ -44,23 +55,34 @@ def main():
     dict_of_jobs['service'] = 0
     dict_of_jobs['chemical'] = 0
     dict_of_jobs['electrical'] = 0
+    dict_of_jobs['software'] = 0
+    dict_of_jobs['mechanical'] = 0
 
-    dict_visited_links['https://www.jobstreet.com.sg/Engineer-jobs'] = 1
-    dict_visited_links['https://jobscentral.com.sg/jobs?title=engineer'] = 1
+    with open(csv_filename, 'r') as csvfile:
+        datareader = csv.reader(csvfile)
+        for row in datareader:
+            if (row[0] != "URL"):
+                dict_visited_links[row[0]] = 1
+                
+    #print(dict_visited_links)
     
-    number_of_processes = 3
-    print(type(url_index),url_index)
-    color = [Fore.RED,Fore.BLUE,Fore.YELLOW]
+    number_of_processes = 5
+    # print(type(url_index),url_index)
+    color = [Fore.RED,Fore.BLUE,Fore.YELLOW,Fore.GREEN,Fore.WHITE]
     v = 0
     visited = set()
     
     try:
-        # allow us to end the code
+        # Allow us to end the code
         signal(SIGINT, handler)
+        # Ensures at any point of time the number of process running is number_of_processes
         with Pool(number_of_processes) as pool:
             while True:
-                v = v%3
-                if (processed_url.value > 6):
+                v = v%number_of_processes
+       
+                if (dict_of_jobs['project'] == 100) or (dict_of_jobs['service'] == 100) or dict_of_jobs['chemical'] == 100 \
+                    or dict_of_jobs['electrical'] == 100 or dict_of_jobs['software'] == 100 or dict_of_jobs['mechanical'] == 100 :
+                    print("=========================TERMINATED DUE TO KEYWORD FOUND================================")
                     break
                 
                 # Calls the read_from_file when the index of the last URL added to the queue does not match the total number of URLs in the CSV file.
@@ -74,6 +96,7 @@ def main():
                 if list_of_urls:
                     (df_row,index) = list_of_urls.popleft()
                     print(color[v]+"Process " + str(df_row['URL']))
+                    # Start process
                     pool.apply_async(process_url,(df_row,num_of_url,color[v],access_lock,dict_of_jobs,index,dict_visited_links))
                     visited.add(url_index.value)
                     processed_url.value += 1
@@ -86,15 +109,14 @@ def main():
             pool.join()
             print("sucessfully close join")
             
-            
     except Exception as e:
-        print(e, "tye")
+        print(e, "@ main")
 
     print(dict_of_jobs)
     
-
-    header = ['electrical', 'service', 'chemical', 'project']
-    data = [dict_of_jobs['electrical'], dict_of_jobs['service'], dict_of_jobs['chemical'], dict_of_jobs['project']]
+    # Store findings into a new file after terminating all threads
+    header = ['electrical', 'service', 'chemical', 'project','mechanical','software']
+    data = [dict_of_jobs['electrical'], dict_of_jobs['service'], dict_of_jobs['chemical'], dict_of_jobs['project'],dict_of_jobs['mechanical'],dict_of_jobs['software']]
 
     with open('findings.csv', 'w', encoding='UTF8',newline='') as f:
         writer = csv.writer(f)
@@ -104,25 +126,27 @@ def main():
 
         # write the data
         writer.writerow(data)
+    
+    make_noise()
 
 def handler(signalnum, frame):
     raise TypeError
 
-
+"""
+Defining a cookie policy to reject all cookies:
+"""
 class BlockAll(cookiejar.CookiePolicy):
     return_ok = set_ok = domain_return_ok = path_return_ok = lambda self, *args, **kwargs: False
     netscape = True
     rfc2965 = hide_cookie2 = False
 
-def get_server_ip(full_query):
-    host_array = full_query.split('/')
-    server_ip = socket.gethostbyname(host_array[2])
-    return server_ip
 
-""" This function updates the csv file to include the new URLs which was extracted from the webpage 
-    as well as update the geolocation information of the webpage within the file. 
-    The total num of url's in the file is updated as well.
-    Access lock is done to ensure that only one thread can read or write to the file at any time. """
+""" 
+This function updates the csv file to include the new URLs which was extracted from the webpage 
+as well as update the geolocation information of the webpage within the file. 
+The total num of url's in the file is updated as well.
+Access lock is done to ensure that only one thread can read or write to the file at any time. 
+"""
 def write_to_file(local_url_index,num_of_url,new_urls,df_row,access_lock):
     access_lock.acquire()
     df = pandas.read_csv(csv_filename)
@@ -132,8 +156,11 @@ def write_to_file(local_url_index,num_of_url,new_urls,df_row,access_lock):
     df.to_csv(csv_filename,index=False)
     access_lock.release()
 
-
-def find_jobs(main_url,full_url, post_name, color,access_lock,dict_of_jobs,dict_visited_links):
+"""
+This function processes the body of the url and extracts the keywords. It also extracts the links found and append into 
+database and make sures that there are no repeated urls.
+"""
+def find_jobs(main_url,full_url, color,access_lock,dict_of_jobs,dict_visited_links):
     try:
         new_urls = pandas.DataFrame(columns=('URL', 'Respond Time (S)', 'IP Of Server', 'Geolocation'))
         s = requests.Session()
@@ -141,15 +168,15 @@ def find_jobs(main_url,full_url, post_name, color,access_lock,dict_of_jobs,dict_
 
         html_text = s.get(full_url).text
         soup = BeautifulSoup(html_text,'lxml')
-        # grab body
         body = soup.body
+
+        # Process all words in the body
         for keyword in (body.strings):
             keyword_lowercase = keyword.lower().strip()
             if keyword_lowercase != "\n" and keyword_lowercase != "":
-                # must use .contains()
                 keys = keyword_lowercase.split()
                 time.sleep(0.001)
-                print(color+f'{keys}')
+                # print(color+f'{keys}')
                 # print(type(keys))
 
                 for key in keys:
@@ -173,23 +200,36 @@ def find_jobs(main_url,full_url, post_name, color,access_lock,dict_of_jobs,dict_
                         dict_of_jobs['service'] +=1 
                         access_lock.release()
 
-                    elif normal_string== 'electrical':
+                    elif normal_string == 'electrical':
                         access_lock.acquire()
                         # print(Fore.CYAN+"HIT", normal_string)
                         dict_of_jobs['electrical'] += 1
                         access_lock.release()
+                    
+                    elif normal_string == 'mechanical':
+                        access_lock.acquire()
+                        # print(Fore.CYAN+"HIT", normal_string)
+                        dict_of_jobs['mechanical'] += 1
+                        access_lock.release()
+                    
+                    elif normal_string == 'software':
+                        access_lock.acquire()
+                        # print(Fore.CYAN+"HIT", normal_string)
+                        dict_of_jobs['software'] += 1
+                        access_lock.release()
                         
         time.sleep(0.1)
-        # grab url 
+        # Grabs URL and do processing
         links = soup.find_all("a") 
         for link in links:
             append_url = str(link.get("href"))
             if append_url != 'None':
+                append_url.replace('"', '')
                 if append_url[0] == "/":
                     append_url = main_url + append_url
                     if append_url[-1] == '/':
                         append_url = append_url[:-1]
-                
+                    # Ensures new urls will not be store in database again
                     if append_url not in dict_visited_links:
                         ip = get_server_ip(append_url)
                         dict_visited_links[append_url]=1
@@ -200,12 +240,9 @@ def find_jobs(main_url,full_url, post_name, color,access_lock,dict_of_jobs,dict_
 
     return new_urls
 
-
-''' TODO add query'''
-
 """ 
-    Extract the URL from the selected row in the csv file and calls find_jobs to get the URL content as well as URL geolocation.
-    Returns a list of new url as well as the updated version of the selected row in the csv file.
+Extract the URL from the selected row in the csv file and calls find_jobs to get the URL content as well as URL geolocation.
+Returns a list of new url as well as the updated version of the selected row in the csv file.
 """
 def getURLContent(df_row,color,access_lock,dict_of_jobs,dict_visited_links):
     try:
@@ -217,16 +254,16 @@ def getURLContent(df_row,color,access_lock,dict_of_jobs,dict_visited_links):
         df_row['IP Of Server'] = server_ip
         country = get_geolocation(server_ip)
         df_row['Geolocation'] = country
-        new_urls = find_jobs(url,full_query, 'posts', color,access_lock,dict_of_jobs,dict_visited_links)
+        new_urls = find_jobs(url,full_query, color,access_lock,dict_of_jobs,dict_visited_links)
     except Exception as e:
         print(e, " @ getURL")
     return new_urls,df_row
  
 
 """ 
-    Reads the newly added URLs from the CSV file and adds them to a queue of URL's for processing.
-    Updates the url_index variable which points to the row of the URL that was last added to the queue. Index 0 = Row 1 in CSV file.
-    Access lock is done to ensure that only one thread can read or write to the file at any time.
+Reads the newly added URLs from the CSV file and adds them to a queue of URL's for processing.
+Updates the url_index variable which points to the row of the URL that was last added to the queue. Index 0 = Row 1 in CSV file.
+Access lock is done to ensure that only one thread can read or write to the file at any time.
 """
 def read_from_file(url_index,num_of_url,access_lock,color,dict_of_jobs):
     # acquire the lock
@@ -246,8 +283,8 @@ def read_from_file(url_index,num_of_url,access_lock,color,dict_of_jobs):
         print(e, "@ file ")
 
 """
-    Calls the getURLContent method to get the list of new urls extracted from the webpage as well as the webpage's geolocation.
-    Calls write_to_file to write update the URLs within the CSV file.
+Calls the getURLContent method to get the list of new urls extracted from the webpage as well as the webpage's geolocation.
+Calls write_to_file to write update the URLs within the CSV file.
 """
 def process_url(df_row,num_of_url,color,access_lock,dict_of_jobs,index,dict_visited_links):
     new_urls,df_row = getURLContent(df_row,color,access_lock,dict_of_jobs,dict_visited_links)
@@ -255,19 +292,28 @@ def process_url(df_row,num_of_url,color,access_lock,dict_of_jobs,index,dict_visi
     write_to_file(index,num_of_url,new_urls,df_row,access_lock)
 
 """
-    Gets the response time of the server using url passed
+Gets the response time of the server using url passed
 """
 def get_response_time(url):
     response_time = requests.get(url).elapsed.total_seconds()
     return response_time
 
 """
-    Uses IP address to get location details using the IP to City database
+Uses IP address to get location details using the IP to City database
 """
 def get_geolocation(ip):
     location = DbIpCity.get(ip)
     country = location.country
     return country
+
+"""
+Uses the url to get IP of the server
+"""
+def get_server_ip(full_query):
+    host_array = full_query.split('/')
+    server_ip = socket.gethostbyname(host_array[2])
+    return server_ip
+
 
 if __name__ == '__main__':
     main()
