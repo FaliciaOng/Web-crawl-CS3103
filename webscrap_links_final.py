@@ -36,7 +36,7 @@ list_of_urls = deque()
 def main():
     global list_of_urls
     startTime = time.time()
-    timeToRun = 300 # 10 minutes
+    timeToRun = 150 # 10 minutes
     endTime = startTime + timeToRun
 
     pool = Pool() 
@@ -103,7 +103,7 @@ def main():
                 time.sleep(1)
 
             print("Abouting to close pool..")
-            pool.close()
+            pool.terminate()
             print("sucessfully close")
             pool.join()
             print("sucessfully close join")
