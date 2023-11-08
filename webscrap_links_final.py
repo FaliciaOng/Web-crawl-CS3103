@@ -28,11 +28,7 @@ def make_noise():
   freq = 440  # Hz
   winsound.Beep(freq, duration)
 
-
-if (sys.argv[1]=="fal"):
-    csv_filename = "url_links.csv"
-else:
-    csv_filename = "C:\\Users\\Siew Yang Zhi\\Desktop\\Uni Stuff\\Y4 Sem 1\\CS3103\\Assignment\\Assignment 4\\url_links.csv"
+csv_filename = "url_links.csv"
 
 list_of_urls = deque()
 
@@ -40,7 +36,7 @@ list_of_urls = deque()
 def main():
     global list_of_urls
     startTime = time.time()
-    timeToRun = 300
+    timeToRun = 1800 # 30 minutes
     endTime = startTime + timeToRun
 
     pool = Pool() 
