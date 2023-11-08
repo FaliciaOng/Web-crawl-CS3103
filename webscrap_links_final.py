@@ -36,7 +36,7 @@ list_of_urls = deque()
 def main():
     global list_of_urls
     startTime = time.time()
-    timeToRun = 1800 # 30 minutes
+    timeToRun = 900 # 15 minutes
     endTime = startTime + timeToRun
 
     pool = Pool() 
@@ -157,7 +157,7 @@ def write_to_file(local_url_index,num_of_url,new_urls,df_row,access_lock):
 This function processes the body of the url and extracts the keywords. It also extracts the links found and append into 
 database and make sures that there are no repeated urls.
 """
-def find_jobs(main_url,full_url, color,access_lock,dict_of_jobs,dict_visited_links):
+def find_jobs(main_url,full_url,color,access_lock,dict_of_jobs,dict_visited_links):
     try:
         new_urls = pandas.DataFrame(columns=('URL', 'Respond Time (S)', 'IP Of Server', 'Geolocation'))
         s = requests.Session()
@@ -228,13 +228,13 @@ def find_jobs(main_url,full_url, color,access_lock,dict_of_jobs,dict_visited_lin
                         append_url = append_url[:-1]
                     # Ensures new urls will not be store in database again
                     if append_url not in dict_visited_links:
-                        print("Start getting IP using:" + str(append_url))
+                        # print("Start getting IP using:" + str(append_url))
                         ip = get_server_ip(append_url)
-                        print("Got IP:" + str(ip))
+                        # print("Got IP:" + str(ip))
                         dict_visited_links[append_url]=1
-                        print("Getting Geo Loca using IP:" + str(ip))
+                        # print("Getting Geo Loca using IP:" + str(ip))
                         geoloc = get_geolocation(ip)
-                        print("Got Geo Loca :" + str(geoloc))
+                        # print("Got Geo Loca :" + str(geoloc))
                         list_row = [append_url, '-', ip, geoloc]
                         new_urls.loc[len(new_urls)] = list_row
     except Exception as e:

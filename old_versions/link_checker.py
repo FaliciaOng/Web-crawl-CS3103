@@ -18,9 +18,11 @@ def find_jobs(main_url,full_url, post_name, color):
 
     html_text = s.get(full_url).text
     soup = BeautifulSoup(html_text,'lxml')
-
+    
     # grab body
     body = soup.body
+    print(body)
+
     for keyword in (body.strings):
         keyword_lowercase = keyword.lower().strip()
         if keyword_lowercase != "\n" and keyword_lowercase != "":
@@ -53,7 +55,7 @@ if __name__ == '__main__':
     query = '/Engineer-jobs'
     # full_query = 'https://sg.jobsdb.com/j?sp=homepage&trigger_source=homepage&q=engineering&l='
     # full_query = 'https://jobscentral.com.sg/jobs?title=engineer'
-    full_query = url + query
+    full_query = url+query
 
     # print(full_query)
     
