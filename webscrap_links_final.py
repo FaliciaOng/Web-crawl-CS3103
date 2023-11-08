@@ -40,7 +40,7 @@ list_of_urls = deque()
 def main():
     global list_of_urls
     startTime = time.time()
-    timeToRun = 300
+    timeToRun = 1800 # 30 minutes
     endTime = startTime + timeToRun
 
     pool = Pool() 
