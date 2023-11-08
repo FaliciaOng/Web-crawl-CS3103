@@ -1,0 +1,4 @@
+bs4
+colorama
+pandas
+ip2geotools
