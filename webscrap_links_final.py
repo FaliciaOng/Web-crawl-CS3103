@@ -8,7 +8,6 @@ import time
 from colorama import Fore
 from http import cookiejar
 import pandas
-import os
 import socket 
 from multiprocessing import Manager
 from multiprocessing.pool import Pool
@@ -16,7 +15,6 @@ from signal import signal, SIGINT
 import warnings
 import csv
 from collections import deque
-import sys
 from ip2geotools.databases.noncommercial import DbIpCity
 import winsound
 warnings.simplefilter('ignore')
@@ -29,6 +27,7 @@ def make_noise():
   winsound.Beep(freq, duration)
 
 csv_filename = "url_links.csv"
+
 
 list_of_urls = deque()
 
@@ -43,7 +42,6 @@ def main():
     manager = Manager()
     
     url_index = manager.Value("i",0)
-    processed_url = manager.Value("i",0)
     num_of_url = manager.Value("i",1)
     access_lock = manager.Lock()
     dict_of_jobs = manager.dict()
@@ -61,11 +59,8 @@ def main():
         for row in datareader:
             if (row[0] != "URL"):
                 dict_visited_links[row[0]] = 1
-                
-    #print(dict_visited_links)
-    
+                    
     number_of_processes = 5
-    # print(type(url_index),url_index)
     color = [Fore.RED,Fore.BLUE,Fore.YELLOW,Fore.GREEN,Fore.WHITE]
     v = 0
     visited = set()
@@ -76,7 +71,6 @@ def main():
         # Ensures at any point of time the number of process running is number_of_processes
         with Pool(number_of_processes) as pool:
             while True:
-                # print(pool._processes)
                 v = v%number_of_processes
 
                 if time.time() >= endTime:
@@ -93,12 +87,10 @@ def main():
                 # Update the num of URL that has been processed by the program.
                 if list_of_urls:
                     (df_row,index) = list_of_urls.popleft()
-                    # print(color[v]+"Process " + str(df_row['URL']))
                     # Start process
                     url_name = str(df_row['URL'])
                     pool.apply_async(process_url,(v,url_name,df_row,num_of_url,color[v],access_lock,dict_of_jobs,index,dict_visited_links))
                     visited.add(url_index.value)
-                    processed_url.value += 1
                     v += 1
                 time.sleep(1)
 
@@ -175,45 +167,36 @@ def find_jobs(main_url,full_url,color,access_lock,dict_of_jobs,dict_visited_link
             if keyword_lowercase != "\n" and keyword_lowercase != "":
                 keys = keyword_lowercase.split()
                 time.sleep(0.001)
-                # print(color+f'{keys}')
-                # print(type(keys))
 
                 for key in keys:
                     normal_string="".join(ch for ch in key if ch.isalnum())
-                    # print(normal_string)
                     if normal_string == 'chemical':
-                        #  print(Fore.YELLOW+"HIT", normal_string)
                         access_lock.acquire()
                         dict_of_jobs['chemical'] +=1 
                         access_lock.release()
                         
                     elif normal_string == 'project':
                         access_lock.acquire()
-                        # print(Fore.WHITE+"HIT", normal_string)
                         dict_of_jobs['project'] +=1 
                         access_lock.release()
 
                     elif normal_string == 'service':
                         access_lock.acquire()
-                        # print(Fore.GREEN+"HIT", normal_string)
                         dict_of_jobs['service'] +=1 
                         access_lock.release()
 
                     elif normal_string == 'electrical':
                         access_lock.acquire()
-                        # print(Fore.CYAN+"HIT", normal_string)
                         dict_of_jobs['electrical'] += 1
                         access_lock.release()
                     
                     elif normal_string == 'mechanical':
                         access_lock.acquire()
-                        # print(Fore.CYAN+"HIT", normal_string)
                         dict_of_jobs['mechanical'] += 1
                         access_lock.release()
                     
                     elif normal_string == 'software':
                         access_lock.acquire()
-                        # print(Fore.CYAN+"HIT", normal_string)
                         dict_of_jobs['software'] += 1
                         access_lock.release()
                         
@@ -230,13 +213,9 @@ def find_jobs(main_url,full_url,color,access_lock,dict_of_jobs,dict_visited_link
                         append_url = append_url[:-1]
                     # Ensures new urls will not be store in database again
                     if append_url not in dict_visited_links:
-                        # print("Start getting IP using:" + str(append_url))
                         ip = get_server_ip(append_url)
-                        # print("Got IP:" + str(ip))
                         dict_visited_links[append_url]=1
-                        # print("Getting Geo Loca using IP:" + str(ip))
                         geoloc = get_geolocation(ip)
-                        # print("Got Geo Loca :" + str(geoloc))
                         list_row = [append_url, '-', ip, geoloc]
                         new_urls.loc[len(new_urls)] = list_row
     except Exception as e:
@@ -275,8 +254,6 @@ def read_from_file(url_index,num_of_url,access_lock,color,dict_of_jobs):
     try:
         access_lock.acquire()
         local_num_of_url = num_of_url.value
-        # print("local_num_of_url:",local_num_of_url)
-        # print("url_index.value:",url_index.value)
         df = pandas.read_csv(csv_filename)
         access_lock.release()
         #Get updated content of file
