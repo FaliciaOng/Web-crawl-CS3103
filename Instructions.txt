@@ -1,0 +1,4 @@
+Instructions:
+1) On terminal, cd into the folder that contains the web crawler files and run pip install -r packages.txt
+2) Run python webscrap_links_final.py
+3) After the crawling has been completed, the accessed urls will be located in the url_links.csv file, and the jobs data obtained from the urls will be located in the findings.csv file
