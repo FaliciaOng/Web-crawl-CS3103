@@ -29,10 +29,10 @@ def make_noise():
   winsound.Beep(freq, duration)
 
 
-if (sys.argv[1]=="yz"):
-    csv_filename = "C:\\Users\\Siew Yang Zhi\\Desktop\\Uni Stuff\\Y4 Sem 1\\CS3103\\Assignment\\Assignment 4\\url_links.csv"
-else:
+if (sys.argv[1]=="fal"):
     csv_filename = "url_links.csv"
+else:
+    csv_filename = "C:\\Users\\Siew Yang Zhi\\Desktop\\Uni Stuff\\Y4 Sem 1\\CS3103\\Assignment\\Assignment 4\\url_links.csv"
 
 list_of_urls = deque()
 
@@ -51,7 +51,6 @@ def main():
     num_of_url = manager.Value("i",1)
     access_lock = manager.Lock()
     dict_of_jobs = manager.dict()
-    exit_prog = manager.Value("i",0) # 0 = False, 1 = True
     dict_visited_links = manager.dict()
 
     dict_of_jobs['project'] = 0
@@ -233,9 +232,14 @@ def find_jobs(main_url,full_url, color,access_lock,dict_of_jobs,dict_visited_lin
                         append_url = append_url[:-1]
                     # Ensures new urls will not be store in database again
                     if append_url not in dict_visited_links:
+                        print("Start getting IP using:" + str(append_url))
                         ip = get_server_ip(append_url)
+                        print("Got IP:" + str(ip))
                         dict_visited_links[append_url]=1
-                        list_row = [append_url, '-', '-', '-']
+                        print("Getting Geo Loca using IP:" + str(ip))
+                        geoloc = get_geolocation(ip)
+                        print("Got Geo Loca :" + str(geoloc))
+                        list_row = [append_url, '-', ip, geoloc]
                         new_urls.loc[len(new_urls)] = list_row
     except Exception as e:
         print(e, " @ find jobs")
