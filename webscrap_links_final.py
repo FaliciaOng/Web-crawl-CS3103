@@ -24,7 +24,7 @@ warnings.simplefilter('ignore')
 
 
 def make_noise():
-  duration = 2000  # milliseconds
+  duration = 1000  # milliseconds
   freq = 440  # Hz
   winsound.Beep(freq, duration)
 
@@ -36,7 +36,7 @@ list_of_urls = deque()
 def main():
     global list_of_urls
     startTime = time.time()
-    timeToRun = 900 # 15 minutes
+    timeToRun = 300 # 10 minutes
     endTime = startTime + timeToRun
 
     pool = Pool() 
@@ -76,6 +76,7 @@ def main():
         # Ensures at any point of time the number of process running is number_of_processes
         with Pool(number_of_processes) as pool:
             while True:
+                # print(pool._processes)
                 v = v%number_of_processes
 
                 if time.time() >= endTime:
@@ -92,9 +93,10 @@ def main():
                 # Update the num of URL that has been processed by the program.
                 if list_of_urls:
                     (df_row,index) = list_of_urls.popleft()
-                    print(color[v]+"Process " + str(df_row['URL']))
+                    # print(color[v]+"Process " + str(df_row['URL']))
                     # Start process
-                    pool.apply_async(process_url,(df_row,num_of_url,color[v],access_lock,dict_of_jobs,index,dict_visited_links))
+                    url_name = str(df_row['URL'])
+                    pool.apply_async(process_url,(v,url_name,df_row,num_of_url,color[v],access_lock,dict_of_jobs,index,dict_visited_links))
                     visited.add(url_index.value)
                     processed_url.value += 1
                     v += 1
@@ -288,9 +290,10 @@ def read_from_file(url_index,num_of_url,access_lock,color,dict_of_jobs):
 Calls the getURLContent method to get the list of new urls extracted from the webpage as well as the webpage's geolocation.
 Calls write_to_file to write update the URLs within the CSV file.
 """
-def process_url(df_row,num_of_url,color,access_lock,dict_of_jobs,index,dict_visited_links):
+def process_url(v,url_name,df_row,num_of_url,color,access_lock,dict_of_jobs,index,dict_visited_links):
+    print(color+f"THREAD {v} START for url {url_name}")
     new_urls,df_row = getURLContent(df_row,color,access_lock,dict_of_jobs,dict_visited_links)
-    print(color+"THREAD COMPLETE")
+    print(color+f"THREAD {v} COMPLETE for url {url_name}")
     write_to_file(index,num_of_url,new_urls,df_row,access_lock)
 
 """
